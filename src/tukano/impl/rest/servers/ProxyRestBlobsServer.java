@@ -2,6 +2,7 @@ package tukano.impl.rest.servers;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
+import tukano.api.java.Blobs;
 import tukano.impl.proxy.DropboxService;
 import tukano.impl.rest.servers.utils.CustomLoggingFilter;
 import tukano.impl.rest.servers.utils.GenericExceptionMapper;
@@ -17,7 +18,7 @@ public class ProxyRestBlobsServer extends AbstractRestServer {
     private DropboxService dropboxService;
 
     ProxyRestBlobsServer(int port, boolean clearState) {
-        super(Log, "Blobs", port);
+        super(Log, Blobs.NAME, port);
         dropboxService = new DropboxService();
         if (clearState) {
             clearDropboxState();
