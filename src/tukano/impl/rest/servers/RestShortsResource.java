@@ -28,7 +28,7 @@ public class RestShortsResource extends RestResource implements RestExtendedShor
 	}
 
 	@Override
-	public Short getShort(String shortId) {
+	public Short getShort(Long version, String shortId) {
 		return super.resultOrThrow( impl.getShort(shortId));
 	}
 	@Override

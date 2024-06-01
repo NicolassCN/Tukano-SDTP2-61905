@@ -8,18 +8,18 @@ public class ProxyRestBlobsResource extends RestResource implements RestExtended
 
     final ExtendedBlobs impl;
 	
-	public ProxyRestBlobsResource() {
-		this.impl = new DropboxService();
+	public ProxyRestBlobsResource(String blobUrl) {
+		this.impl = new DropboxService(blobUrl);
 	}
 	
 	@Override
-	public void upload(String blobId, byte[] bytes) {
-		super.resultOrThrow( impl.upload(blobId, bytes));
+	public void upload(String blobId, long timestamp, String verifier, byte[] bytes) {
+		super.resultOrThrow( impl.upload(blobId, timestamp, verifier, bytes));
 	}
 
 	@Override
-	public byte[] download(String blobId) {
-		return super.resultOrThrow( impl.download( blobId ));
+	public byte[] download(String blobId, long timestamp, String verifier) {
+		return super.resultOrThrow( impl.download( blobId, timestamp, verifier));
 	}
 
 	@Override

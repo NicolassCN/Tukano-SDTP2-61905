@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Consumer;
@@ -30,16 +31,33 @@ import utils.Token;
 public class JavaBlobs implements ExtendedBlobs {
 	
 	private static final String BLOBS_ROOT_DIR = "/tmp/blobs/";
+	private static final int TOKEN_VALIDITY = 10000;
 	
 	private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
 
 	private static final int CHUNK_SIZE = 4096;
 
+	private final String blobUrl;
+
+	public JavaBlobs(String blobUrl) {
+		this.blobUrl = blobUrl;
+	}
+
 	@Override
-	public Result<Void> upload(String blobId, byte[] bytes) {
+	public Result<Void> upload(String blobId, long timestamp, String verifier, byte[] bytes) {
 		Log.info(() -> format("upload : blobId = %s, sha256 = %s\n", blobId, Hex.of(Hash.sha256(bytes))));
 
+		
 		if (!validBlobId(blobId))
+			return error(FORBIDDEN);
+
+		String expected = generateVerifier(blobId, timestamp);
+		if (!expected.equals(verifier)) {
+			Log.info(() -> format("upload : expected = %s, verifier = %s\n", expected, verifier));
+			return error(FORBIDDEN);
+		}
+
+		if (Instant.now().toEpochMilli() - timestamp > TOKEN_VALIDITY)
 			return error(FORBIDDEN);
 
 		var file = toFilePath(blobId);
@@ -58,8 +76,15 @@ public class JavaBlobs implements ExtendedBlobs {
 	}
 
 	@Override
-	public Result<byte[]> download(String blobId) {
+	public Result<byte[]> download(String blobId, long timestamp, String verifier) {
 		Log.info(() -> format("download : blobId = %s\n", blobId));
+
+		String expected = generateVerifier(blobId, timestamp);
+		if (!expected.equals(verifier))
+			return error(FORBIDDEN);
+
+		if (Instant.now().toEpochMilli() - timestamp > TOKEN_VALIDITY)
+		return error(FORBIDDEN);
 
 		var file = toFilePath(blobId);
 		if (file == null)
@@ -72,7 +97,7 @@ public class JavaBlobs implements ExtendedBlobs {
 	}
 
 	@Override
-	public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink) {
+	public Result<Void> downloadToSink(String blobId, long timestamp, String verifier, Consumer<byte[]> sink) {
 		Log.info(() -> format("downloadToSink : blobId = %s\n", blobId));
 
 		var file = toFilePath(blobId);
@@ -119,7 +144,7 @@ public class JavaBlobs implements ExtendedBlobs {
 	public Result<Void> deleteAllBlobs(String userId, String token) {
 		Log.info(() -> format("deleteAllBlobs : userId = %s, token=%s\n", userId, token));
 
-		if( ! Token.matches( token ) )
+		if( !Token.matches( token ) )
 			return error(FORBIDDEN);
 		
 		try {
@@ -146,4 +171,11 @@ public class JavaBlobs implements ExtendedBlobs {
 
 		return res;
 	}
+
+	private String generateVerifier(String blobId, long timestamp) {
+		Log.info(blobUrl+" "+blobId + " " + timestamp + " " + Token.get());
+		String url = blobUrl + "/blobs/" + blobId;
+		return Hash.sha256(url + timestamp  + Token.get());
+	}
+
 }

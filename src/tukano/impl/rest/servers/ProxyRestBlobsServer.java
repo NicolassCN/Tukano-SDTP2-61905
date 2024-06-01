@@ -19,7 +19,7 @@ public class ProxyRestBlobsServer extends AbstractRestServer {
 
     ProxyRestBlobsServer(int port, boolean clearState) {
         super(Log, Blobs.NAME, port);
-        dropboxService = new DropboxService();
+        dropboxService = new DropboxService(super.serverURI);
         if (clearState) {
             clearDropboxState();
         }
@@ -27,7 +27,7 @@ public class ProxyRestBlobsServer extends AbstractRestServer {
 
     @Override
     void registerResources(ResourceConfig config) {
-        config.register(RestBlobsResource.class);
+        config.register(new RestBlobsResource(super.serverURI));
         config.register(new GenericExceptionMapper());
         config.register(new CustomLoggingFilter());
     }

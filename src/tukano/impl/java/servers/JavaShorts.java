@@ -15,6 +15,7 @@ import static tukano.impl.java.clients.Clients.UsersClients;
 import static utils.DB.getOne;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -33,7 +34,9 @@ import tukano.api.java.Result;
 import tukano.impl.api.java.ExtendedShorts;
 import tukano.impl.java.servers.data.Following;
 import tukano.impl.java.servers.data.Likes;
+import tukano.impl.rest.rep.ReplicationManager;
 import utils.DB;
+import utils.Hash;
 import utils.Token;
 
 public class JavaShorts implements ExtendedShorts {
@@ -95,6 +98,7 @@ public class JavaShorts implements ExtendedShorts {
 
 				}
 			});
+
 	
 	@Override
 	public Result<Short> createShort(String userId, String password) {
@@ -106,7 +110,15 @@ public class JavaShorts implements ExtendedShorts {
 			var blobUrl = format("%s/%s/%s", getLeastLoadedBlobServerURI(), Blobs.NAME, shortId); 
 			var shrt = new Short(shortId, userId, blobUrl);
 
-			return DB.insertOne(shrt);
+			DB.insertOne(shrt);
+
+			long timestamp = Instant.now().toEpochMilli();
+			var verifier = Hash.sha256(blobUrl + timestamp + Token.get());
+			blobUrl = format("%s?timestamp=%d&verifier=%s", blobUrl, timestamp, verifier);
+			shrt.setBlobUrl(blobUrl);
+
+			return Result.ok(shrt);
+			
 		});
 	}
 
@@ -117,7 +129,19 @@ public class JavaShorts implements ExtendedShorts {
 		if( shortId == null )
 			return error(BAD_REQUEST);
 
-		return shortFromCache(shortId);
+		var shrtRes = shortFromCache(shortId);
+		if (!shrtRes.isOK())
+			return shrtRes;
+		var shrt = shrtRes.value();
+		shrt = shrt.copyWith(shrt.getTotalLikes());
+		
+		long timestamp = Instant.now().toEpochMilli();
+		var verifier = Hash.sha256(shrt.getBlobUrl() + timestamp + Token.get());
+		var blobUrl = format("%s?timestamp=%d&verifier=%s", shrt.getBlobUrl(), timestamp, verifier);
+		shrt.setBlobUrl(blobUrl);
+
+		return Result.ok(shrt);
+
 	}
 
 	

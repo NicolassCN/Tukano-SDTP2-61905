@@ -1,6 +1,5 @@
 package tukano.impl.rest.servers;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 
 import org.glassfish.jersey.server.ResourceConfig;

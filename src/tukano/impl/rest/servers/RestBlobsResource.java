@@ -1,5 +1,7 @@
 package tukano.impl.rest.servers;
 
+
+
 import jakarta.inject.Singleton;
 import tukano.impl.api.java.ExtendedBlobs;
 import tukano.impl.api.rest.RestExtendedBlobs;
@@ -8,20 +10,21 @@ import tukano.impl.java.servers.JavaBlobs;
 @Singleton
 public class RestBlobsResource extends RestResource implements RestExtendedBlobs {
 
+
 	final ExtendedBlobs impl;
 	
-	public RestBlobsResource() {
-		this.impl = new JavaBlobs();
+	public RestBlobsResource(String blobUrl) {
+		this.impl = new JavaBlobs(blobUrl);
 	}
 	
 	@Override
-	public void upload(String blobId, byte[] bytes) {
-		super.resultOrThrow( impl.upload(blobId, bytes));
+	public void upload(String blobId, long timestamp, String verifier, byte[] bytes) {
+		super.resultOrThrow( impl.upload(blobId, timestamp, verifier, bytes));
 	}
 
 	@Override
-	public byte[] download(String blobId) {
-		return super.resultOrThrow( impl.download( blobId ));
+	public byte[] download(String blobId, long timestamp, String verifier) {
+		return super.resultOrThrow( impl.download( blobId, timestamp, verifier));
 	}
 
 	@Override
@@ -33,4 +36,5 @@ public class RestBlobsResource extends RestResource implements RestExtendedBlobs
 	public void deleteAllBlobs(String userId, String password) {
 		super.resultOrThrow( impl.deleteAllBlobs( userId, password ));
 	}
+
 }

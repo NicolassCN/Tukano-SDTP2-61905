@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import tukano.api.java.Blobs;
 import utils.Args;
+import utils.IP;
 
 public class GrpcBlobsServer extends AbstractGrpcServer {
 public static final int PORT = 15678;
@@ -12,7 +13,7 @@ public static final int PORT = 15678;
 	private static Logger Log = Logger.getLogger(GrpcBlobsServer.class.getName());
 
 	public GrpcBlobsServer(int port) {
-		super( Log, Blobs.NAME, port, new GrpcBlobsServerStub());
+		super( Log, Blobs.NAME, port, new GrpcBlobsServerStub(String.format(SERVER_BASE_URI, IP.hostName(), PORT, GRPC_CTX)));
 	}
 	
 	public static void main(String[] args) {
@@ -22,5 +23,6 @@ public static final int PORT = 15678;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}	
+	}
+	
 }

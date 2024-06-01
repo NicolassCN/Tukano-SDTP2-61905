@@ -8,9 +8,16 @@ import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import com.google.gson.Gson;
 import org.pac4j.scribe.builder.api.DropboxApi20;
+
+import java.time.Instant;
 import java.util.List;
 import tukano.api.java.Result;
 import tukano.impl.api.java.ExtendedBlobs;
+import utils.Hash;
+import utils.Token;
+
+import static tukano.api.java.Result.ErrorCode.*;
+import static tukano.api.java.Result.error;
 
 public class DropboxService implements ExtendedBlobs {
 
@@ -30,8 +37,12 @@ public class DropboxService implements ExtendedBlobs {
     private final OAuth20Service service;
     private final OAuth2AccessToken accessToken;
     private final Gson gson;
+    private final int TOKEN_VALIDITY = 10000;
+    private String blobUrl;
 
-    public DropboxService() {
+
+    public DropboxService(String blobUrl) {
+        this.blobUrl = blobUrl;
         gson = new Gson();
         accessToken = new OAuth2AccessToken(accessTokenStr);
         service = new ServiceBuilder(apiKey)
@@ -40,8 +51,17 @@ public class DropboxService implements ExtendedBlobs {
     }
     
     @Override
-    public Result<Void> upload(String blobId, byte[] bytes) {
+    public Result<Void> upload(String blobId, long timestamp, String verifier, byte[] bytes) {
         try {
+            
+            String expected = generateVerifier(blobId, timestamp);
+            if (!expected.equals(verifier)) {
+                return error(FORBIDDEN);
+            }
+
+            if (Instant.now().toEpochMilli() - timestamp > TOKEN_VALIDITY)
+                return error(FORBIDDEN);
+
             uploadFile(blobId, bytes);
             return Result.ok();
         } catch (Exception e) {
@@ -51,8 +71,17 @@ public class DropboxService implements ExtendedBlobs {
     }
 
     @Override
-    public Result<byte[]> download(String blobId) {
+    public Result<byte[]> download(String blobId, long timestamp, String verifier) {
         try {
+
+            String expected = generateVerifier(blobId, timestamp);
+            if (!expected.equals(verifier)) {
+                return error(FORBIDDEN);
+            }
+
+            if (Instant.now().toEpochMilli() - timestamp > TOKEN_VALIDITY)
+                return error(FORBIDDEN);
+                
             return Result.ok(downloadFile(blobId));
         } catch (Exception e) {
             e.printStackTrace();
@@ -145,6 +174,11 @@ public class DropboxService implements ExtendedBlobs {
 
         return response.getBody();
     }
+
+    private String generateVerifier(String blobId, long timestamp) {
+		String url = blobUrl + "/blobs/" + blobId;
+		return Hash.sha256(url + timestamp  + Token.get());
+	}
 
     // Nested classes for Dropbox API arguments
     private record UploadFileArgs(String path) {}

@@ -23,7 +23,7 @@ public class RestBlobsServer extends AbstractRestServer {
 	
 	@Override
 	void registerResources(ResourceConfig config) {
-		config.register( RestBlobsResource.class ); 
+		config.register(new RestBlobsResource(super.serverURI)); 
 		config.register(new GenericExceptionMapper());
 		config.register(new CustomLoggingFilter());
 	}

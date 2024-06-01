@@ -1,7 +1,6 @@
 package tukano.impl.grpc.clients;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URI;
 import java.util.function.Consumer;
 
 import com.google.protobuf.ByteString;
@@ -26,10 +25,10 @@ public class GrpcBlobsClient extends GrpcClient implements ExtendedBlobs {
 	
 	
 	@Override
-	public Result<Void> upload(String blobId, byte[] bytes) {
+	public Result<Void> upload(String blobId, long timestamp, String verifier, byte[] bytes) {
 		return super.toJavaResult(() -> {
 			stub.upload( UploadArgs.newBuilder()
-				.setBlobId( blobId )
+				.setBlobId( blobId + "?timestamp=" + timestamp + "&verifier=" + verifier )
 				.setData( ByteString.copyFrom(bytes))
 				.build());
 
@@ -37,10 +36,10 @@ public class GrpcBlobsClient extends GrpcClient implements ExtendedBlobs {
 	}
 
 	@Override
-	public Result<byte[]> download(String blobId) {
+	public Result<byte[]> download(String blobId, long timestamp, String verifier) {
 		return super.toJavaResult(() -> {
 			var res = stub.download( DownloadArgs.newBuilder()
-				.setBlobId(blobId)
+				.setBlobId(blobId + "?timestamp=" + timestamp + "&verifier=" + verifier)
 				.build());			
 			var baos = new ByteArrayOutputStream();
 			res.forEachRemaining( part -> {

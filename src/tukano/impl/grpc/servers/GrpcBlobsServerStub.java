@@ -4,18 +4,18 @@ import com.google.protobuf.ByteString;
 
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.StreamObserver;
-import tukano.api.java.Blobs;
 import tukano.impl.grpc.generated_java.BlobsGrpc;
 import tukano.impl.grpc.generated_java.BlobsProtoBuf.*;
-import tukano.impl.grpc.generated_java.BlobsProtoBuf.DownloadResult;
-import tukano.impl.grpc.generated_java.BlobsProtoBuf.UploadArgs;
-import tukano.impl.grpc.generated_java.BlobsProtoBuf.UploadResult;
 import tukano.impl.api.java.ExtendedBlobs;
 import tukano.impl.java.servers.JavaBlobs;
 
 public class GrpcBlobsServerStub extends AbstractGrpcStub implements BlobsGrpc.AsyncService {
 
-	ExtendedBlobs impl = new JavaBlobs();
+	ExtendedBlobs impl;
+
+	public GrpcBlobsServerStub(String blobUrl) {
+		this.impl = new JavaBlobs(blobUrl);
+	}
 
 	@Override
 	public ServerServiceDefinition bindService() {
@@ -24,7 +24,11 @@ public class GrpcBlobsServerStub extends AbstractGrpcStub implements BlobsGrpc.A
 
 	@Override
 	public void upload(UploadArgs request, StreamObserver<UploadResult> responseObserver) {
-		var res = impl.upload(request.getBlobId(), request.getData().toByteArray());
+		var split = request.getBlobId().split("[?=&]");
+		var blobId = split[0];
+		long timestamp = Long.parseLong(split[2]);
+		var verifier = split[4];
+		var res = impl.upload(blobId, timestamp, verifier, request.getData().toByteArray());
 		if (!res.isOK())
 			responseObserver.onError(errorCodeToStatus(res.error()));
 		else {
@@ -35,7 +39,11 @@ public class GrpcBlobsServerStub extends AbstractGrpcStub implements BlobsGrpc.A
 
 	@Override
 	public void download(DownloadArgs request, StreamObserver<DownloadResult> responseObserver) {
-		var res = impl.downloadToSink(request.getBlobId(), (data) -> {
+		var split = request.getBlobId().split("[?=&]");
+		var blobId = split[0];
+		long timestamp = Long.parseLong(split[2]);
+		var verifier = split[4];
+		var res = impl.downloadToSink(blobId, timestamp, verifier, (data) -> {
 			responseObserver.onNext(DownloadResult.newBuilder().setChunk(ByteString.copyFrom(data)).build());
 		});
 		if (res.isOK())

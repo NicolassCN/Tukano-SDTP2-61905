@@ -7,7 +7,7 @@ public class Hash {
 		static MessageDigest md5;
 		static MessageDigest sha256;
 				
-		public static byte[] md5( byte[] data ) {
+		public static synchronized byte[] md5( byte[] data ) {
 			if (md5 == null) {
 				try {
 					md5 = MessageDigest.getInstance("MD5");
@@ -20,7 +20,7 @@ public class Hash {
 			return md5.digest();
 		}
 		
-		public static byte[] sha256( byte[] data ) {
+		public static synchronized byte[] sha256( byte[] data ) {
 			if (sha256 == null) {
 				try {
 					sha256 = MessageDigest.getInstance("SHA-256");
@@ -31,5 +31,17 @@ public class Hash {
 			sha256.reset();
 			sha256.update( data == null ? new byte[0] : data );
 			return sha256.digest();
+		}
+
+		public static String sha256(String data) {
+			return of(sha256(data.getBytes()));
+		}
+
+		public static String of(byte[] hash) {
+			StringBuilder sb = new StringBuilder();
+			for (byte b : hash) {
+				sb.append(String.format("%02x", b));
+			}
+			return sb.toString();
 		}
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -15,6 +16,9 @@ import tukano.api.Short;
 
 @Path(RestShorts.PATH)
 public interface RestShorts {
+
+	public static final String HEADER_VERSION = "X-SHORTS-version";
+
 	String PATH = "/shorts";
 	
 	String USER_ID = "userId";
@@ -41,7 +45,7 @@ public interface RestShorts {
 	@GET
 	@Path("/{" + SHORT_ID + "}" )
 	@Produces(MediaType.APPLICATION_JSON)
-	Short getShort(@PathParam(SHORT_ID) String shortId);
+	Short getShort(@HeaderParam(RestShorts.HEADER_VERSION) Long version, @PathParam(SHORT_ID) String shortId);
 
 	@GET
 	@Path("/{" + USER_ID + "}" + SHORTS )

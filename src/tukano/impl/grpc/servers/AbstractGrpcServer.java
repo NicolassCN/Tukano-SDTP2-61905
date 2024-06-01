@@ -17,8 +17,8 @@ import tukano.impl.java.servers.AbstractServer;
 import utils.IP;
 
 public class AbstractGrpcServer extends AbstractServer {
-    private static final String SERVER_BASE_URI = "grpc://%s:%s%s";
-    private static final String GRPC_CTX = "/grpc";
+    protected static final String SERVER_BASE_URI = "grpc://%s:%s%s";
+    protected static final String GRPC_CTX = "/grpc";
 
     protected final Server server;
 
